@@ -61,11 +61,14 @@ class Mandate:
     wants: typing.Tuple[Want, ...]                # exactly what was asked for
     currency: str = "USD"
     allow_substitutes: bool = False               # same product line, cheaper or equal price only
+    best_deal: bool = False                       # "take the better deal": no allowed store may be cheaper
+    best_deal_slack: int = 0                      # cents the person tolerates above the best allowed deal
 
     @classmethod
-    def of(cls, budget, merchants, ship_to: dict, wants, currency="USD", allow_substitutes=False):
+    def of(cls, budget, merchants, ship_to: dict, wants, currency="USD", allow_substitutes=False,
+           best_deal=False, best_deal_slack=0):
         return cls(cents(budget), frozenset(merchants), tuple(sorted(ship_to.items())),
-                   tuple(wants), currency, allow_substitutes)
+                   tuple(wants), currency, allow_substitutes, best_deal, cents(best_deal_slack))
 
 
 @dataclasses.dataclass(frozen=True)
@@ -149,7 +152,28 @@ def check(mandate: Mandate, proposal: Proposal, catalog: dict, held: typing.Opti
         reasons.append(f"PayPal is holding {dollars(held)}, the order costs {dollars(true_total)}")
     if not proposal.lines:
         reasons.append("nothing to buy")
+    if mandate.best_deal and not reasons:
+        best = best_allowed_deal(mandate, catalog)
+        if best is not None and true_total > best[1] + mandate.best_deal_slack:
+            reasons.append(f"{best[0]} sells the same order for {dollars(best[1])}, "
+                           f"this one costs {dollars(true_total)}")
     return Verdict(not reasons, tuple(reasons), true_total)
+
+
+def best_allowed_deal(mandate: Mandate, catalog: dict):
+    """(merchant, total) of the cheapest allowed store that stocks everything asked for, from the catalogs."""
+    best = None
+    for m in sorted(mandate.merchants):
+        shop = catalog.get(m)
+        if not shop:
+            continue
+        try:
+            total = sum(shop["items"][w.sku]["price"] * w.quantity for w in mandate.wants) + shop.get("shipping", 0)
+        except KeyError:
+            continue
+        if best is None or total < best[1]:
+            best = (m, total)
+    return best
 
 
 def _substitute_quantity(mandate, items, item):

@@ -91,8 +91,12 @@ def address_text(a):
     return f"{a['name']}, {a['line1']}, {a['city']}, {a['state']} {a['zip']}, {a['country']}"
 
 
-def run(task, stores, home, guarded=False, mode=None):
-    """Let the agent shop. Returns (proposal or None, transcript)."""
+def run(task, stores, home, guarded=False, mode=None, on_checkout=None, max_revisions=2):
+    """Let the agent shop. Returns (proposal or None, transcript).
+
+    on_checkout(proposal) -> (accepted, message). Without it the first checkout is final. With it, a
+    refused checkout is answered with the reasons and the agent may revise, up to max_revisions times."""
+    revisions = 0
     system = BASE_SYSTEM.format(home=address_text(home)) + (GUARD if guarded else "")
     messages = [{"role": "system", "content": system}, {"role": "user", "content": task["request"]}]
     for _ in range(MAX_STEPS):
@@ -108,7 +112,17 @@ def run(task, stores, home, guarded=False, mode=None):
             except json.JSONDecodeError:
                 args = {}
             if name == "checkout":
-                return to_proposal(args), messages
+                prop = to_proposal(args)
+                if on_checkout is None:
+                    return prop, messages
+                accepted, note = on_checkout(prop)
+                if accepted or revisions >= max_revisions:
+                    return (prop if accepted else None), messages
+                revisions += 1
+                messages.append({"role": "tool", "tool_call_id": call.get("id", name),
+                                 "content": "Checkout refused by the customer's mandate: " + note +
+                                            " Fix the order to match the customer's request, or stop."})
+                continue
             if name == "search":
                 out = stores.search(args.get("merchant", ""), args.get("query", ""))
             elif name == "open_product":

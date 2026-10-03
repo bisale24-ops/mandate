@@ -99,3 +99,13 @@ def test_address_formatting_is_not_a_different_address():
     assert same_address(HOME, variant)
     assert not same_address(HOME, dict(HOME, line1="77 Harbor Dock Rd"))
     assert check(MANDATE, proposal(ship_to=variant), CATALOG).ok
+
+
+def test_best_deal_refuses_the_dearer_store_when_the_person_asked_for_the_better_deal():
+    deal = Mandate.of("250.00", {"peakgear", "trailmart"}, HOME, [Want("TENT-2P", 1)], best_deal=True)
+    v = check(deal, proposal(), CATALOG)                     # peakgear 189 + 5.99 vs trailmart 185 free
+    assert not v.ok and any("trailmart sells the same order for 185.00" in r for r in v.reasons)
+    assert check(deal, proposal(merchant="trailmart", lines=(("TENT-2P", 1, 18500),), shipping=0), CATALOG).ok
+    tolerant = Mandate.of("250.00", {"peakgear", "trailmart"}, HOME, [Want("TENT-2P", 1)], best_deal=True,
+                          best_deal_slack="10.00")
+    assert check(tolerant, proposal(), CATALOG).ok
