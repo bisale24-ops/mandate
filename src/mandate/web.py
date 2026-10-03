@@ -18,6 +18,8 @@ import threading
 
 from . import stores
 from .paypal import PayPal, PayPalError
+from .compose import compose
+from .policy import fingerprint
 from .trace import run_task
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -71,6 +73,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self._send(404, {"error": "not found"})
 
     def do_POST(self):  # noqa: N802
+        if self.path == "/api/compose":
+            return self._compose()
         if self.path != "/api/run":
             self._send(404, {"error": "not found"})
             return
@@ -95,6 +99,27 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self._send(409, {"error": "This scenario has not been recorded yet. " + str(error)[:120]})
             except PayPalError as error:
                 self._send(502, {"error": f"PayPal sandbox did not answer: {error}"})
+
+    def _compose(self):
+        try:
+            length = min(int(self.headers.get("content-length") or 0), 2048)
+            text = str(json.loads(self.rfile.read(length) or b"{}").get("text", "")).strip()[:300]
+        except ValueError:
+            self._send(400, {"error": "send JSON: {\"text\": ...}"})
+            return
+        if not text:
+            self._send(400, {"error": "Say what the agent should buy."})
+            return
+        try:
+            mandate, draft = compose(text, WORLD)
+        except RuntimeError as error:
+            self._send(503 if "no model key" in str(error) else 422, {"error": str(error)})
+            return
+        except Exception as error:   # noqa: BLE001 - model or network failure is shown, not raised
+            self._send(502, {"error": f"the model did not answer: {type(error).__name__}"})
+            return
+        a = dict(mandate.ship_to)
+        self._send(200, dict(draft, fingerprint=fingerprint(mandate), ship_to=a))
 
     def log_message(self, fmt, *args):
         sys.stdout.write("%s %s\n" % (self.address_string(), fmt % args))

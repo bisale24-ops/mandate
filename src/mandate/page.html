@@ -51,6 +51,9 @@
   .mandate .row:first-child { border-top: 0; }
   .pill { display: inline-block; font-size: 13px; font-weight: 500; padding: 2px 10px; border-radius: 99px; margin: 0 4px 4px 0; background: var(--mist); color: var(--forest); }
   .note { font-size: 14px; color: var(--slate); }
+  .compose { display: flex; gap: 8px; margin: 14px 0 4px; }
+  .compose input { flex: 1; min-width: 0; font: inherit; font-size: 15px; padding: 10px 16px; border-radius: 9999px; border: 0; background: var(--paper); color: var(--obsidian); }
+  .compose input:focus { outline: 2px solid var(--lime); }
 
   section { padding: 72px 0; }
   h2 { font-weight: 900; font-size: clamp(34px, 4.4vw, 59px); line-height: .95; letter-spacing: -.035em; margin: 0 0 14px; color: var(--obsidian); text-transform: uppercase; }
@@ -130,7 +133,9 @@
   </div>
   <div class="card mandate" id="mandateCard">
     <h2 class="mtitle">Your mandate</h2>
-    <div class="note">What the agent may buy — checked in code against the order PayPal holds.</div>
+    <div class="note">Say it in your own words. A model drafts the rules; you see them before any agent runs; code enforces them.</div>
+    <form id="composeForm" class="compose"><input id="composeText" placeholder="one TrailHome tent, under $220, to my home, best deal" aria-label="What should the agent buy?"><button class="btn primary" id="composeBtn" type="submit">Draft</button></form>
+    <div class="note" id="composeNote"></div>
     <div class="inset">
     <div class="row"><span class="label">Buy</span><span id="mWants">1 × TrailHome 2-Person Tent</span></div>
     <div class="row"><span class="label">Budget</span><span id="mBudget">$218.00</span></div>
@@ -277,6 +282,20 @@ async function loadBench() {
   $("benchNote").textContent = `${b.tasks} tasks run so far · model ${b.model} · every Mandate decision made on the order PayPal holds${b.stopped ? " · " + b.stopped : ""}.`;
 }
 
+$("composeForm").onsubmit = async e => {
+  e.preventDefault();
+  const text = $("composeText").value.trim(); if (!text) return;
+  $("composeBtn").disabled = true; $("composeNote").textContent = "Drafting…";
+  try {
+    const res = await fetch("/api/compose", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({text})});
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || res.status);
+    mandateCard({wants: d.items, budget: d.budget, stores: d.stores, ship_to: d.ship_to, best_deal: d.best_deal, fingerprint: d.fingerprint});
+    $("composeNote").textContent = "Drafted from your words. Nothing outside these rules can be captured.";
+  } catch (err) {
+    $("composeNote").textContent = err.message.includes("no model key") ? "Drafting is offline on this server; the rules below are the demo's." : err.message;
+  } finally { $("composeBtn").disabled = false; }
+};
 $("run").onclick = run;
 init();
 </script>
