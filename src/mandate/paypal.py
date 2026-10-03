@@ -67,7 +67,7 @@ class PayPal:
         except urllib.error.HTTPError as e:
             status, raw = e.code, e.read()
         self.calls.append((method, path.split("?")[0], status))
-        payload = json.loads(raw) if raw else {}
+        payload = json.loads(raw) if raw and raw.strip() else {}
         if status >= 400:
             raise PayPalError(status, payload)
         return payload

@@ -72,3 +72,19 @@ def test_the_order_round_trips_through_paypal_fields():
     assert unit["amount"]["value"] == "248.97" and unit["amount"]["breakdown"]["shipping"]["value"] == "5.99"
     back, held = proposal_from_order({"purchase_units": [unit]}, "trailmart")
     assert back == p and held == 24897
+
+
+def test_a_whitespace_body_is_an_empty_answer_not_a_crash():
+    transport, _ = fake({**TOKEN, ("POST", "/v2/payments/authorizations/A9/void"): (204, None)})
+
+    class Blank(Resp):
+        pass
+
+    def blank(req, timeout=30):
+        if req.full_url.endswith("/void"):
+            r = Resp(204, None)
+            r.write(b"\n")
+            r.seek(0)
+            return r
+        return transport(req, timeout)
+    assert PayPal("id", "secret", transport=blank).void("A9") == {}
