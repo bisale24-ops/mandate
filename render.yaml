@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: khlab-mandate
+    runtime: python
+    plan: free
+    buildCommand: "true"
+    startCommand: PYTHONPATH=src python -m mandate.web
+    healthCheckPath: /healthz
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: MANDATE_MODE
+        value: replay
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
