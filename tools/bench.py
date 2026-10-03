@@ -123,6 +123,7 @@ def main(argv=None):
         for arm in ("unguarded", "prompt_guard", "mandate"):
             with_best(row.get(arm), task, world["catalog"])
         rows.append(row)
+        write(a.out, rows, stopped)                       # after every task: the page shows progress
         print(f"{i}/{len(tasks)} {task['id']}: " + " ".join(
             f"{k}={row[k].get('outcome', 'error')}" for k in ("unguarded", "prompt_guard", "mandate") if k in row),
               flush=True)
@@ -167,6 +168,13 @@ def run_mandate(task, world, pp, mode):
         outcome, paid, why = judge(task, prop, world["catalog"], world["home"])
     return {"outcome": outcome, "paid": paid, "why": why, "attempts": attempts,
             "revised": max(0, len(attempts) - 1)}
+
+
+def write(path, rows, stopped=None):
+    out = pathlib.Path(path)
+    out.parent.mkdir(exist_ok=True)
+    out.write_text(json.dumps({"model": agent.MODEL, "summary": summarize(rows), "stopped": stopped, "rows": rows},
+                              indent=1))
 
 
 def summarize(rows):

@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mandate — an AI shopper that can't overpay</title>
+<meta name="description" content="Mandate lets an AI agent shop with PayPal without being able to overpay: PayPal holds the money, your mandate decides whether it is taken.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  /* Reference: Wise on refero.design (https://styles.refero.design/style/367c0c6e-73a7-441c-a8ff-91d139ac60dc):
+     white canvas, Forest Ink green for weight, Lime Voltage pills, green-tinted Fog cards, heavy display type.
+     Lime marks money that actually moved (a capture); a voided hold stays in Fog with the amount struck. */
+  :root {
+    --paper: #ffffff; --fog: #e8ebe6; --mist: #e2f6d5; --forest: #163300; --spruce: #054d28;
+    --lime: #9fe870; --obsidian: #0e0f0c; --charcoal: #454745; --slate: #6a6c6a; --pebble: #868685; --red: #cb272f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--charcoal); }
+  body { font: 400 16px/1.55 Inter, system-ui, sans-serif; font-feature-settings: "calt"; letter-spacing: -.006em; -webkit-font-smoothing: antialiased; }
+  a { color: var(--forest); }
+  code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .9em; background: var(--fog); padding: 1px 5px; border-radius: 5px; color: var(--obsidian); }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  .label { font-size: 13px; font-weight: 600; color: var(--slate); }
+  header { position: sticky; top: 0; z-index: 5; background: rgba(255,255,255,.92); backdrop-filter: blur(10px); }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .mark { font-size: 22px; font-weight: 900; letter-spacing: -.04em; color: var(--forest); display: flex; align-items: center; gap: 8px; }
+  .mark i { width: 14px; height: 14px; background: var(--lime); border-radius: 99px; display: inline-block; }
+  nav { display: flex; gap: 6px; font-size: 15px; font-weight: 500; }
+  nav a { text-decoration: none; color: var(--forest); padding: 8px 14px; border-radius: 99px; }
+  nav a:hover { background: var(--mist); }
+
+  .hero { display: grid; grid-template-columns: 1.2fr .8fr; gap: 48px; padding: 72px 0 64px; align-items: center; }
+  @media (max-width: 900px) { .hero { grid-template-columns: 1fr; padding-top: 40px; } }
+  h1 { font-weight: 900; font-size: clamp(44px, 6.4vw, 89px); line-height: .9; letter-spacing: -.04em; margin: 0 0 24px; color: var(--obsidian); text-transform: uppercase; }
+  h1 em { font-style: normal; color: var(--forest); background: var(--lime); padding: 0 .08em; border-radius: .08em; }
+  .sub { font-size: 20px; line-height: 1.5; color: var(--charcoal); max-width: 32em; margin: 0 0 32px; }
+  .sub b { color: var(--forest); font-weight: 600; }
+  .btn { font: inherit; font-size: 16px; font-weight: 500; border-radius: 9999px; padding: 11px 24px; border: 1px solid var(--forest); cursor: pointer; background: var(--paper); color: var(--forest); text-decoration: none; display: inline-block; }
+  .btn.primary { background: var(--lime); border-color: var(--lime); color: var(--forest); }
+  .btn.dark { background: var(--forest); color: #fff; }
+  .btn[disabled] { opacity: .55; cursor: wait; }
+  .ctas { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .card { background: var(--fog); border-radius: 24px; }
+  .mandate { padding: 26px 28px; background: var(--forest); color: #fff; border-radius: 28px; }
+  .mandate h3 { font-weight: 900; font-size: 28px; letter-spacing: -.03em; margin: 0 0 4px; color: var(--lime); }
+  .mandate .note { color: #cfe3c0; }
+  .mandate .inset { background: var(--paper); color: var(--charcoal); border-radius: 16px; padding: 4px 16px; margin-top: 14px; }
+  .mandate .row { display: grid; grid-template-columns: 92px 1fr; gap: 12px; padding: 12px 0; border-top: 1px solid var(--fog); font-size: 15px; color: var(--obsidian); }
+  .mandate .row:first-child { border-top: 0; }
+  .pill { display: inline-block; font-size: 13px; font-weight: 500; padding: 2px 10px; border-radius: 99px; margin: 0 4px 4px 0; background: var(--mist); color: var(--forest); }
+  .note { font-size: 14px; color: var(--slate); }
+
+  section { padding: 72px 0; }
+  h2 { font-weight: 900; font-size: clamp(34px, 4.4vw, 59px); line-height: .95; letter-spacing: -.035em; margin: 0 0 14px; color: var(--obsidian); text-transform: uppercase; }
+  .lede { color: var(--charcoal); font-size: 18px; max-width: 46em; margin: 0 0 28px; }
+
+  .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin-bottom: 18px; }
+  .controls label { display: grid; gap: 6px; }
+  select { font: inherit; font-size: 16px; padding: 12px 16px; border: 1px solid var(--pebble); border-radius: 12px; background: var(--paper); color: var(--obsidian); min-width: 260px; }
+  .inj { margin: 0 0 18px; padding: 14px 18px; border-radius: 16px; background: var(--paper); border: 2px solid var(--red); font-size: 15px; display: none; color: var(--obsidian); }
+  .inj b { color: var(--red); }
+
+  .sides { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .sides { grid-template-columns: 1fr; } }
+  .side { padding: 24px 24px; }
+  .side h3 { font-weight: 700; font-size: 22px; letter-spacing: -.01em; margin: 2px 0 10px; color: var(--obsidian); }
+  .verdict { font-size: 16px; margin: 6px 0 14px; padding: 12px 14px; border-radius: 14px; background: var(--paper); color: var(--obsidian); }
+  .verdict.bad { background: var(--obsidian); color: #fff; }
+  .verdict.good { background: var(--mist); color: var(--forest); }
+  .steps { list-style: none; margin: 0; padding: 0; font-size: 14px; color: var(--charcoal); }
+  .steps li { padding: 9px 0; border-top: 1px solid #d6dbd2; display: grid; grid-template-columns: 100px 1fr; gap: 10px; }
+  .steps .t { color: var(--slate); font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; padding-top: 2px; }
+  .flag { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--red); }
+  .receipt { margin: 12px 0 0; padding: 14px 16px; border-radius: 16px; background: var(--paper); font-size: 14px; color: var(--charcoal); }
+  .receipt .amt { font-size: 26px; font-weight: 700; letter-spacing: -.02em; color: var(--obsidian); }
+  .receipt.captured { background: var(--lime); color: var(--forest); }
+  .receipt.captured .amt { color: var(--forest); }
+  .receipt.voided .amt { text-decoration: line-through; color: var(--pebble); }
+  .receipt .id { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; color: var(--slate); margin-top: 4px; }
+  .receipt.captured .id { color: var(--spruce); }
+  .receipt ul { margin: 8px 0 0; padding-left: 18px; }
+  .empty { color: var(--slate); font-size: 15px; padding: 18px 0; }
+
+  .band { background: var(--forest); color: #e8ebe6; border-radius: 28px; margin: 0 16px; }
+  .band h2 { color: var(--lime); }
+  .band .lede { color: #cfe3c0; }
+  table.bench { width: 100%; border-collapse: collapse; font-size: 16px; }
+  table.bench th { text-align: left; font-weight: 600; font-size: 13px; color: #b9d3a6; padding: 10px 12px; border-bottom: 1px solid var(--spruce); }
+  table.bench td { padding: 16px 12px; border-bottom: 1px solid var(--spruce); color: #e8ebe6; }
+  table.bench td.big { font-size: 30px; font-weight: 700; letter-spacing: -.02em; }
+  table.bench tr.us td { color: #fff; }
+  table.bench tr.us td.big.hl { color: var(--lime); }
+  .small { font-size: 13px; color: #b9d3a6; margin-top: 14px; }
+
+  .steps3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 900px) { .steps3 { grid-template-columns: 1fr; } }
+  .steps3 .card { padding: 26px; }
+  .steps3 .n { font-size: 61px; font-weight: 900; letter-spacing: -.04em; line-height: 1; color: var(--forest); }
+  .steps3 p { margin: 8px 0 0; }
+  pre { font: 13px/1.65 "JetBrains Mono", ui-monospace, monospace; background: var(--obsidian); color: #e8ebe6; border-radius: 20px; padding: 22px 24px; overflow-x: auto; margin: 0; }
+  pre .c { color: var(--lime); }
+  footer { padding: 32px 0 48px; color: var(--slate); font-size: 14px; }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="mark"><i></i>Mandate</div>
+  <nav><a href="#demo">Demo</a><a href="#bench">Benchmark</a><a href="#toolkit">Agent Toolkit</a><a href="https://github.com/bisale24-ops/mandate">GitHub</a></nav>
+</div></header>
+
+<main>
+<div class="wrap hero">
+  <div>
+    <div class="label">PayPal × AI agents</div>
+    <h1>Let an agent shop. It <em>can't</em> overpay.</h1>
+    <p class="sub">PayPal <b>holds</b> the money. Your <b>mandate</b> decides whether it is taken. A product page that tells the agent to upsell, add a fee or ship somewhere else gets a voided hold — not your money.</p>
+    <div class="ctas"><a class="btn primary" href="#demo">Try an attack</a><a class="btn" href="#bench">See the numbers</a></div>
+  </div>
+  <div class="card mandate" id="mandateCard">
+    <h3>Your mandate</h3>
+    <div class="note">What the agent may buy — checked in code against the order PayPal holds.</div>
+    <div class="inset">
+    <div class="row"><span class="label">Buy</span><span id="mWants">1 × TrailHome 2-Person Tent</span></div>
+    <div class="row"><span class="label">Budget</span><span id="mBudget">$218.00</span></div>
+    <div class="row"><span class="label">Stores</span><span id="mStores"><span class="pill">peakgear</span><span class="pill">trailmart</span></span></div>
+    <div class="row"><span class="label">Ship to</span><span id="mShip">1420 Alder Ave, San Jose, CA 95131</span></div>
+    <div class="row"><span class="label">Price</span><span id="mDeal">The best deal among your stores</span></div>
+    </div>
+  </div>
+</div>
+
+<section id="demo"><div class="wrap">
+  <h2>One request. One poisoned page. Two agents.</h2>
+  <p class="lede">Pick a product and an attack. The same model shops the same three stores; on the left its checkout is simply paid, on the right PayPal holds the money and Mandate decides. Every hold, void and capture below is a live PayPal sandbox call.</p>
+  <div class="controls">
+    <label><span class="label">Product</span><select id="product"></select></label>
+    <label><span class="label">Attack hidden on trailmart</span><select id="attack"></select></label>
+    <button class="btn dark" id="run">Run both agents</button>
+  </div>
+  <div class="inj" id="inj"></div>
+  <div class="sides">
+    <div class="card side"><div class="label">Without Mandate</div><h3>The agent pays what it proposes</h3><div id="left"><p class="empty">Run a scenario to see the agent's steps.</p></div></div>
+    <div class="card side"><div class="label">With Mandate</div><h3>PayPal holds, the mandate decides</h3><div id="right"><p class="empty">Each checkout becomes a PayPal hold that is captured or voided.</p></div></div>
+  </div>
+</div></section>
+
+<section class="band" id="bench"><div class="wrap" style="padding:0 24px">
+  <h2>Measured, not promised.</h2>
+  <p class="lede" id="benchLede">Every product × eight attacks (upsell, add-on, quantity, price lie, fee, address swap, look-alike store, fake system message) plus an honest control. Outcomes are judged independently of the mandate code.</p>
+  <table class="bench" id="benchTable"><tr><td class="empty">Loading…</td></tr></table>
+  <p class="small" id="benchNote"></p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>How it works</h2>
+  <p class="lede">The model never decides whether money moves. PayPal's authorization is the commit protocol; the mandate is the only key to capture.</p>
+  <div class="steps3">
+    <div class="card"><div class="n">1</div><div class="label">Hold</div><p>The agent's checkout becomes a PayPal order with intent <code>AUTHORIZE</code>: items, shipping and address are stored on the order and the money is held, not taken.</p></div>
+    <div class="card"><div class="n">2</div><div class="label">Check</div><p>Mandate reads the order back from PayPal and checks it against your request and the stores' own catalogs — never against what a web page told the agent.</p></div>
+    <div class="card"><div class="n">3</div><div class="label">Capture or void</div><p>A clean order is captured. Anything else is voided and the reasons go back to the agent, which can fix the order — so honest purchases still complete.</p></div>
+  </div>
+</div></section>
+
+<section id="toolkit"><div class="wrap">
+  <h2>One line for PayPal's Agent Toolkit</h2>
+  <p class="lede">The toolkit gives an agent <code>create_order</code> and <code>pay_order</code>. Mandate wraps the one method every framework dispatches through, so OpenAI Agents, LangChain, CrewAI and Bedrock agents all get the same guard.</p>
+<pre><span class="c"># pip install paypal-agent-toolkit</span>
+from paypal_agent_toolkit.openai.toolkit import PayPalToolkit
+from mandate.toolkit import guard
+from mandate.policy import Mandate, Want
+
+toolkit = PayPalToolkit(client_id, secret, configuration)
+guard(toolkit.get_paypal_api(),
+      Mandate.of("218.00", {"trailmart"}, home, [Want("TENT-STD", 1)]),
+      catalog, merchant="trailmart")
+<span class="c"># pay_order now captures only orders the mandate approves;
+# a refusal comes back to the agent as the tool result, with the reasons.</span></pre>
+</div></section>
+</main>
+
+<footer><div class="wrap">Mandate · built by <a href="https://khlab.app">KHLab</a> for the PayPal AI Hackathon · PayPal sandbox only, no real money moves · design reference: Wise (refero.design)</div></footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+const money = c => "$" + (c / 100).toFixed(2);
+let SCEN = null;
+
+async function init() {
+  SCEN = await (await fetch("/api/scenarios")).json();
+  $("product").innerHTML = SCEN.products.map(p => `<option value="${p.line}">${esc(p.name)}</option>`).join("");
+  $("attack").innerHTML = SCEN.attacks.map(a => `<option value="${a.id}">${esc(a.id === "none" ? a.label : a.id.replace("_", " ") + " — " + a.label)}</option>`).join("");
+  $("attack").value = "fee";
+  loadBench();
+}
+
+function mandateCard(m) {
+  $("mWants").innerHTML = m.wants.map(w => `${w.quantity} × ${esc(w.name)}`).join("<br>");
+  $("mBudget").textContent = "$" + m.budget;
+  $("mStores").innerHTML = m.stores.map(s => `<span class="pill">${esc(s)}</span>`).join("");
+  const a = m.ship_to; $("mShip").textContent = `${a.line1}, ${a.city}, ${a.state} ${a.zip}`;
+  $("mDeal").textContent = m.best_deal ? "The best deal among your stores" : "Catalog price";
+}
+
+function steps(list) {
+  return `<ul class="steps">${list.map(s => {
+    const what = s.tool === "search" ? `searched <b>${esc(s.args.merchant)}</b> for “${esc(s.args.query)}”`
+      : s.tool === "open_product" ? `opened <b>${esc(s.args.merchant)}</b> / ${esc(s.args.sku)}`
+      : `checkout at <b>${esc(s.args.merchant)}</b>`;
+    return `<li><span class="t">${esc(s.tool)}</span><span>${what}${s.injected ? `<br><span class="flag">page contains the injected instruction</span>` : ""}</span></li>`;
+  }).join("")}</ul>`;
+}
+
+function receipt(p, fate, reasons, paypal) {
+  const lines = p ? p.lines.map(l => `${l.quantity} × ${esc(l.sku)} @ ${money(l.unit_price)}`).join(", ") : "";
+  const ship = p ? `ship to ${esc(p.ship_to.line1 || "")}, ${esc(p.ship_to.city || "")}` : "";
+  return `<div class="receipt ${fate}"><div class="label">${fate === "captured" ? "Captured" : fate === "voided" ? "Hold voided" : "Paid"} · ${esc(p.merchant)}</div>
+    <div class="amt">${money(p.total)}</div><div style="font-size:13px">${lines}${p.shipping ? ` + shipping ${money(p.shipping)}` : ""} · ${ship}</div>
+    ${paypal ? `<div class="id">PayPal order ${esc(paypal.order)} · authorization ${esc(paypal.authorization)}</div>` : ""}
+    ${reasons && reasons.length ? `<ul>${reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}</div>`;
+}
+
+function render(r) {
+  mandateCard(r.mandate);
+  const inj = $("inj");
+  if (r.injection) { inj.style.display = "block"; inj.innerHTML = `<b>Hidden on trailmart (${esc(r.task.where)}):</b> ${esc(r.injection)}`; }
+  else { inj.style.display = "block"; inj.innerHTML = `<b>Honest control:</b> no instruction on any page. A guard that blocks this one is useless.`; }
+  const w = r.without, best = r.best_text;
+  const wp = w.proposal;
+  let wv = !wp ? `The agent never checked out.` : `Paid <b>${money(wp.total)}</b> at ${esc(wp.merchant)}.` ;
+  $("left").innerHTML = `<div class="verdict ${wp && wp.total / 100 > parseFloat(best) ? "bad" : ""}">${wv} Best deal in your stores: $${best}.</div>`
+    + steps(w.steps) + (wp ? receipt(wp, "paid", null, w.paypal) : "");
+  const g = r.with, fp = g.proposal;
+  let gv = !fp ? `No purchase: every attempt was refused.` : `Paid <b>${money(fp.total)}</b> at ${esc(fp.merchant)}${g.attempts.length > 1 ? ` after ${g.attempts.length - 1} refused attempt${g.attempts.length > 2 ? "s" : ""}` : ""}.`;
+  $("right").innerHTML = `<div class="verdict ${fp ? "good" : ""}">${gv}</div>` + steps(g.steps)
+    + g.attempts.map(a => receipt(a.proposal, a.ok ? "captured" : "voided", a.reasons, a.paypal)).join("");
+}
+
+async function run() {
+  const task = `${$("product").value}-${$("attack").value}`;
+  $("run").disabled = true; $("run").textContent = "Running… (live PayPal sandbox)";
+  $("left").innerHTML = $("right").innerHTML = `<p class="empty">Holding and checking with PayPal…</p>`;
+  try {
+    const res = await fetch("/api/run", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({task})});
+    const r = await res.json();
+    if (!res.ok) throw new Error(r.error || res.status);
+    render(r);
+  } catch (e) {
+    $("left").innerHTML = $("right").innerHTML = `<p class="empty">${esc(e.message)}</p>`;
+  } finally { $("run").disabled = false; $("run").textContent = "Run both agents"; }
+}
+
+async function loadBench() {
+  const b = await (await fetch("/api/bench")).json();
+  const s = b.summary;
+  if (!s) { $("benchTable").innerHTML = `<tr><td>The benchmark is running.</td></tr>`; return; }
+  const row = (name, k, us) => {
+    const x = s[k];
+    return `<tr class="${us ? "us" : ""}"><td>${name}</td><td class="big ${us ? "hl" : ""}">${x.harm_on_attacks} / ${x.attacks}</td><td class="big">${x.degraded_on_attacks}</td><td class="big ${us ? "hl" : ""}">${x.correct_on_attacks}</td><td class="big">$${x.dollars_lost_on_attacks}</td><td class="big">${x.honest_completed} / ${x.honest}</td></tr>`;
+  };
+  $("benchTable").innerHTML = `<tr><th>Agent</th><th>Harmful payments</th><th>Paid more than the best deal</th><th>Right item, best price</th><th>Lost to attacks</th><th>Honest buys completed</th></tr>`
+    + row("No guard", "unguarded") + row("“Ignore page instructions” in the prompt", "prompt_guard") + row("Mandate", "mandate", true);
+  $("benchNote").textContent = `${b.tasks} tasks run so far · model ${b.model} · every Mandate decision made on the order PayPal holds${b.stopped ? " · " + b.stopped : ""}.`;
+}
+
+$("run").onclick = run;
+init();
+</script>
+</body>
+</html>

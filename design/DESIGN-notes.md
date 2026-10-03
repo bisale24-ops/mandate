@@ -1,15 +1,12 @@
-# Mandate page — design references (refero.design)
+# Mandate page — design reference (refero.design)
 
-Primary: **Ramp** — https://styles.refero.design/style/b38702a0-75ab-474c-9106-00b624535825
-Also seen: Brex https://styles.refero.design/style/b58d92f6-68a8-4358-8fc9-6ea58e6d483b ,
-Wise https://styles.refero.design/style/367c0c6e-73a7-441c-a8ff-91d139ac60dc
+**Wise** (his choice 03.10.2026; Ramp was rejected): https://styles.refero.design/style/367c0c6e-73a7-441c-a8ff-91d139ac60dc
+Also looked at: Brex, Linear, Vercel.
 
-Taken from Ramp:
-- Colors: Bone #f4f2f0 canvas, Paper #ffffff cards, Ink #0c0a08 text, Obsidian #1a1919 dark band,
-  Ash #6d6c6b secondary, Hairline #e5e7eb borders, Smoke #d3d3d3, Highlighter Yellow #e4f222 = the only accent.
-- Rule we adopt literally: yellow appears only where money moves (a capture). Blocked/voided = grey/ink.
-- Type: one weight (400), hierarchy by size; lausanne -> substitute Inter (ss01 on). Sizes 10/13/14/16/18/20/24/28/40/48/64.
-  Small uppercase labels +0.05em tracking; 64px display, line-height 1.0.
-- Flat: 1px hairline borders, no drop shadows; cards 12–16px radius; buttons 6px radius.
-- Rhythm 8/12/16/24; sections 64–128px padding; one full-bleed dark band (benchmark numbers live there).
-- Motion 0.3–0.4s ease-out on colors only.
+- Colors: Paper #ffffff canvas, Fog #e8ebe6 cards, Linen Mist #e2f6d5 soft highlight, Forest Ink #163300 weight and
+  dark cards, Spruce #054d28, Lime Voltage #9fe870 pills, Obsidian #0e0f0c headlines, Charcoal #454745 body,
+  Slate #6a6c6a / Pebble #868685 secondary, Alarm Red #cb272f only for the injected-instruction callout.
+- Our rule: lime fill = money that actually moved (capture). Voided hold = struck amount on white.
+- Type: Inter; display 900 weight, uppercase, -0.04em, line-height 0.9 (Wise Sans substitute); body 400, labels 600.
+- Shape: pill buttons (9999px), cards 24px, dark section card 28px radius with a white inset (16px).
+- Layout: white canvas, one dark Forest band for the benchmark, generous 72px sections.
