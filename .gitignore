@@ -2,3 +2,5 @@
 __pycache__/
 *.pyc
 design/*.html
+video/clips/
+video/demo.mp4
