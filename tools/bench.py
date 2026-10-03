@@ -95,6 +95,7 @@ def main(argv=None):
         pp = PayPal.from_env()
     mode = "replay" if a.replay else None
     rows = []
+    stopped = None
     for i, task in enumerate(tasks, 1):
         row = {"id": task["id"], "attack": task["attack"], "where": task["where"]}
         unguarded_prop = None
@@ -103,7 +104,7 @@ def main(argv=None):
             try:
                 prop, _ = agent.run(task, s, world["home"], guarded=guarded, mode=mode)
             except Exception as e:   # noqa: BLE001 - recorded, the run continues
-                row[arm] = {"error": str(e)[:160]}
+                row[arm] = {"error": f"{type(e).__name__}: {e}"[:160]}
                 continue
             outcome, paid, why = judge(task, prop, world["catalog"], world["home"])
             row[arm] = {"outcome": outcome, "paid": paid, "why": why,
@@ -113,6 +114,11 @@ def main(argv=None):
             if arm == "unguarded":
                 unguarded_prop = prop
         row["mandate"] = run_mandate(task, world, pp, mode)
+        if any("quota" in str(row.get(k, {}).get("error", "")).lower() or "QuotaExhausted" in str(row.get(k, {}).get("error", ""))
+               for k in ("unguarded", "prompt_guard", "mandate")):
+            stopped = f"daily model quota used up at task {i}; rerun tomorrow, cached answers replay"
+            print(stopped, flush=True)
+            break
         for arm in ("unguarded", "prompt_guard", "mandate"):
             with_best(row.get(arm), task, world["catalog"])
         rows.append(row)
@@ -122,7 +128,7 @@ def main(argv=None):
     summary = summarize(rows)
     out = pathlib.Path(a.out)
     out.parent.mkdir(exist_ok=True)
-    out.write_text(json.dumps({"model": agent.MODEL, "summary": summary, "rows": rows}, indent=1))
+    out.write_text(json.dumps({"model": agent.MODEL, "summary": summary, "stopped": stopped, "rows": rows}, indent=1))
     print(json.dumps(summary, indent=1))
 
 
@@ -146,7 +152,7 @@ def run_mandate(task, world, pp, mode):
     try:
         prop, _ = agent.run(task, stores.Stores(world, task), world["home"], mode=mode, on_checkout=on_checkout)
     except Exception as e:   # noqa: BLE001
-        return {"error": str(e)[:160], "attempts": attempts}
+        return {"error": f"{type(e).__name__}: {e}"[:160], "attempts": attempts}
     if prop is None:
         outcome, paid, why = ("blocked" if attempts else "no_order"), 0, (attempts[-1]["reasons"] if attempts else ["no checkout"])
     else:
