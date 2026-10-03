@@ -21,3 +21,24 @@ Decision 03.10.2026: idea 1. An AI shopping agent that cannot overpay.
   4032036247327321) returns COMPLETED with an authorization; capture -> COMPLETED; void -> 204, VOIDED.
   So the agent flow is: authorize -> Mandate check -> capture or void. No buyer interaction needed.
 - "Save payment methods" (Vault) is OFF on the new app; turn it on only if we demo a vaulted PayPal wallet.
+
+## Built for first place (his rule: every product competes for 1st, from day one)
+Judging (5 criteria): Technological Implementation (PayPal + AI, non-trivial), Design (complete product, not a PoC),
+Potential Impact (credible case, real audience, shown working), Innovation, Presentation (video end to end).
+
+What each criterion gets:
+1. **Tech** — a real LLM agent with tool calls shopping across three merchant sites we host (one honest, one with
+   injected instructions in product pages/reviews, one look-alike); every purchase is a live sandbox hold ->
+   Mandate check -> capture or void, PayPal ids shown. Wrap PayPal's own Agent Toolkit / MCP tools so Mandate is a
+   drop-in guard for PayPal's agent stack (judges are PayPal developer advocates).
+2. **Design** — a product, not a console: the person sets a mandate like a card spending limit (budget, stores,
+   address, the list), watches the agent work, and sees a receipt for every decision: what was asked, what the agent
+   tried, which rule stopped it, the PayPal hold id and its fate. Refero references before any page work.
+3. **Impact** — the measured claim: 200+ tasks x attack types; three arms: unguarded agent, prompt-only guard
+   ("be careful" in the system prompt), Mandate. Report overpayment rate, dollars that would have left, wrong
+   addresses, and false refusals of honest purchases (a guard that blocks everything wins nothing). Replays offline.
+4. **Innovation** — authorization as the enforcement point: the model never decides whether money moves; PayPal's
+   hold/capture/void is the commit protocol and the mandate is the only key to capture.
+5. **Presentation** — <3 min TTS video: problem in 15 s, live attack stopped with the PayPal void on screen,
+   the benchmark table, how to plug it in. Hosted on Render (sponsor prize) with a one-click demo.
+Never ship "minimum first": each of the above is in the first working version, then hardened.
