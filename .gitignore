@@ -4,3 +4,4 @@ __pycache__/
 design/*.html
 video/clips/
 video/demo.mp4
+docs/shard-*.json

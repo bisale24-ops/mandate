@@ -86,10 +86,12 @@ def main(argv=None):
     ap.add_argument("--replay", action="store_true")
     ap.add_argument("--paypal", action="store_true", help="live sandbox holds (authorize, then capture or void)")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--start", type=int, default=0, help="first task index (for parallel shards)")
+    ap.add_argument("--end", type=int, default=0, help="one past the last task index")
     ap.add_argument("--out", default=str(ROOT / "docs" / "bench.json"))
     a = ap.parse_args(argv)
     world = stores.load_world()
-    tasks = world["tasks"][: a.limit or None]
+    tasks = world["tasks"][a.start: a.end or None][: a.limit or None]
     pp = None
     if a.paypal:
         from mandate.paypal import PayPal
