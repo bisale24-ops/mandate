@@ -88,12 +88,17 @@ class PayPal:
             headers["PayPal-Request-Id"] = request_id or str(uuid.uuid4())
         return self._send(method, path, body if body is not None else ({} if method == "POST" else None), headers)
 
-    def authorize(self, total_cents, card=None, reference="mandate", currency="USD", description=None, request_id=None):
+    def authorize(self, total_cents, card=None, reference="mandate", currency="USD", description=None, request_id=None,
+                  proposal=None, names=None):
         """Create an order with intent AUTHORIZE and a card source: the money is held, nothing is taken.
-        Returns the authorization (id, status, amount)."""
+        With a proposal, PayPal stores the line items, shipping amount and ship-to address on the order,
+        so the mandate can read the order back from PayPal instead of trusting the agent.
+        Returns the authorization (id, status, amount, order_id)."""
         unit = {"reference_id": reference, "amount": {"currency_code": currency, "value": dollars(total_cents)}}
         if description:
             unit["description"] = description[:127]
+        if proposal is not None:
+            unit.update(order_unit(proposal, currency, names or {}))
         order = self._api("POST", "/v2/checkout/orders", {
             "intent": "AUTHORIZE", "purchase_units": [unit],
             "payment_source": {"card": card or TEST_CARD}}, request_id)
@@ -110,5 +115,40 @@ class PayPal:
     def void(self, authorization_id, request_id=None):
         return self._api("POST", f"/v2/payments/authorizations/{authorization_id}/void", None, request_id)
 
+    def order(self, order_id):
+        return self._api("GET", f"/v2/checkout/orders/{order_id}")
+
     def authorization(self, authorization_id):
         return self._api("GET", f"/v2/payments/authorizations/{authorization_id}")
+
+
+def order_unit(proposal, currency="USD", names=None):
+    """Line items, amount breakdown and shipping address of a purchase unit, from a proposal."""
+    money = lambda c: {"currency_code": currency, "value": dollars(c)}   # noqa: E731
+    items = [{"name": (names or {}).get(l.sku, l.sku)[:127], "sku": l.sku, "quantity": str(l.quantity),
+              "unit_amount": money(l.unit_price)} for l in proposal.lines]
+    item_total = sum(l.quantity * l.unit_price for l in proposal.lines)
+    a = dict(proposal.ship_to)
+    return {"items": items,
+            "amount": dict(money(item_total + proposal.shipping),
+                           breakdown={"item_total": money(item_total), "shipping": money(proposal.shipping)}),
+            "shipping": {"name": {"full_name": a.get("name", "")[:300]},
+                         "address": {"address_line_1": a.get("line1", ""), "admin_area_2": a.get("city", ""),
+                                     "admin_area_1": a.get("state", ""), "postal_code": a.get("zip", ""),
+                                     "country_code": (a.get("country") or "US")[:2].upper()}}}
+
+
+def proposal_from_order(order, merchant):
+    """What PayPal says was ordered: the source of truth the mandate checks."""
+    from .policy import Line, Proposal, cents
+    pu = (order.get("purchase_units") or [{}])[0]
+    lines = tuple(Line(i.get("sku") or i.get("name", ""), int(i.get("quantity", "0")),
+                       cents(i.get("unit_amount", {}).get("value", "0"))) for i in pu.get("items", []))
+    ship = pu.get("amount", {}).get("breakdown", {}).get("shipping", {}).get("value", "0")
+    addr = pu.get("shipping", {}).get("address", {})
+    ship_to = {"name": pu.get("shipping", {}).get("name", {}).get("full_name", ""),
+               "line1": addr.get("address_line_1", ""), "city": addr.get("admin_area_2", ""),
+               "state": addr.get("admin_area_1", ""), "zip": addr.get("postal_code", ""),
+               "country": addr.get("country_code", "")}
+    held = cents(pu.get("amount", {}).get("value", "0"))
+    return Proposal(merchant, lines, tuple(sorted(ship_to.items())), cents(ship)), held

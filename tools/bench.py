@@ -25,6 +25,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from mandate import agent, policy, stores  # noqa: E402
+from mandate.paypal import proposal_from_order  # noqa: E402
 from mandate.policy import Mandate, Want, dollars  # noqa: E402
 
 
@@ -138,10 +139,17 @@ def run_mandate(task, world, pp, mode):
     m = mandate_for(task, world["home"])
     attempts = []
 
+    names = {s: it["name"] for shop in world["catalog"].values() for s, it in shop["items"].items()}
+
     def on_checkout(prop):
-        held = prop.total
-        auth = pp.authorize(held, reference=task["id"][:120], description=task["request"]) if pp and held > 0 else None
-        v = policy.check(m, prop, world["catalog"], held=held)
+        held, checked = prop.total, prop
+        auth = None
+        if pp and held > 0:
+            # PayPal stores the order; the mandate checks what PayPal holds, not what the agent said
+            auth = pp.authorize(held, reference=task["id"][:120], description=task["request"],
+                                proposal=prop, names=names)
+            checked, held = proposal_from_order(pp.order(auth["order_id"]), prop.merchant)
+        v = policy.check(m, checked, world["catalog"], held=held)
         if auth:
             (pp.capture if v.ok else pp.void)(auth["id"])
         attempts.append({"total": held, "ok": v.ok, "reasons": list(v.reasons),

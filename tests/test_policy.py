@@ -109,3 +109,8 @@ def test_best_deal_refuses_the_dearer_store_when_the_person_asked_for_the_better
     tolerant = Mandate.of("250.00", {"peakgear", "trailmart"}, HOME, [Want("TENT-2P", 1)], best_deal=True,
                           best_deal_slack="10.00")
     assert check(tolerant, proposal(), CATALOG).ok
+
+
+def test_budget_units_are_unambiguous():
+    assert Mandate.of("218.00", {"x"}, HOME, []).budget == 21800      # a string is dollars
+    assert Mandate.of(21800, {"x"}, HOME, []).budget == 21800         # an int is already cents

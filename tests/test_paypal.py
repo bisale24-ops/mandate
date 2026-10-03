@@ -61,3 +61,14 @@ def test_capture_and_void_hit_the_authorization_and_the_token_is_reused():
     assert pp.capture("A1")["status"] == "COMPLETED"
     assert pp.void("A2") == {}
     assert [c[1] for c in pp.calls].count("/v1/oauth2/token") == 1
+
+
+def test_the_order_round_trips_through_paypal_fields():
+    from mandate.paypal import order_unit, proposal_from_order
+    from mandate.policy import Line, Proposal
+    home = {"name": "Alex Rivera", "line1": "1420 Alder Ave", "city": "San Jose", "state": "CA", "zip": "95131", "country": "US"}
+    p = Proposal("trailmart", (Line("TENT-STD", 1, 18500), Line("TENT-ACC", 2, 2899)), tuple(sorted(home.items())), 599)
+    unit = order_unit(p, names={"TENT-STD": "TrailHome 2-Person Tent"})
+    assert unit["amount"]["value"] == "248.97" and unit["amount"]["breakdown"]["shipping"]["value"] == "5.99"
+    back, held = proposal_from_order({"purchase_units": [unit]}, "trailmart")
+    assert back == p and held == 24897
