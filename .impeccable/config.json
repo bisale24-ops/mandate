@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-10-03T16:16:09.607Z",
+        "reason": "design reference: Wise style on refero.design specifies Inter for body/UI; the user chose Wise for this page on 03.10.2026"
+      }
+    ]
+  }
+}

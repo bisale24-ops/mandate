@@ -13,7 +13,7 @@
      Lime marks money that actually moved (a capture); a voided hold stays in Fog with the amount struck. */
   :root {
     --paper: #ffffff; --fog: #e8ebe6; --mist: #e2f6d5; --forest: #163300; --spruce: #054d28;
-    --lime: #9fe870; --obsidian: #0e0f0c; --charcoal: #454745; --slate: #6a6c6a; --pebble: #868685; --red: #cb272f;
+    --lime: #9fe870; --obsidian: #0e0f0c; --charcoal: #454745; --slate: #5a5c5a; --pebble: #868685; --red: #cb272f;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--paper); color: var(--charcoal); }
@@ -44,7 +44,7 @@
 
   .card { background: var(--fog); border-radius: 24px; }
   .mandate { padding: 26px 28px; background: var(--forest); color: #fff; border-radius: 28px; }
-  .mandate h3 { font-weight: 900; font-size: 28px; letter-spacing: -.03em; margin: 0 0 4px; color: var(--lime); }
+  .mandate .mtitle { font-weight: 900; font-size: 28px; line-height: 1.1; letter-spacing: -.03em; margin: 0 0 4px; color: var(--lime); text-transform: none; }
   .mandate .note { color: #cfe3c0; }
   .mandate .inset { background: var(--paper); color: var(--charcoal); border-radius: 16px; padding: 4px 16px; margin-top: 14px; }
   .mandate .row { display: grid; grid-template-columns: 92px 1fr; gap: 12px; padding: 12px 0; border-top: 1px solid var(--fog); font-size: 15px; color: var(--obsidian); }
@@ -129,7 +129,7 @@
     <div class="ctas"><a class="btn primary" href="#demo">Try an attack</a><a class="btn" href="#bench">See the numbers</a></div>
   </div>
   <div class="card mandate" id="mandateCard">
-    <h3>Your mandate</h3>
+    <h2 class="mtitle">Your mandate</h2>
     <div class="note">What the agent may buy — checked in code against the order PayPal holds.</div>
     <div class="inset">
     <div class="row"><span class="label">Buy</span><span id="mWants">1 × TrailHome 2-Person Tent</span></div>
