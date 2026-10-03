@@ -137,6 +137,7 @@
     <div class="row"><span class="label">Stores</span><span id="mStores"><span class="pill">peakgear</span><span class="pill">trailmart</span></span></div>
     <div class="row"><span class="label">Ship to</span><span id="mShip">1420 Alder Ave, San Jose, CA 95131</span></div>
     <div class="row"><span class="label">Price</span><span id="mDeal">The best deal among your stores</span></div>
+    <div class="row"><span class="label">On PayPal</span><span><code id="mFp">mandate:…</code><br><span class="note">stored as <code>custom_id</code> on every order it decides</span></span></div>
     </div>
   </div>
 </div>
@@ -212,6 +213,7 @@ function mandateCard(m) {
   $("mStores").innerHTML = m.stores.map(s => `<span class="pill">${esc(s)}</span>`).join("");
   const a = m.ship_to; $("mShip").textContent = `${a.line1}, ${a.city}, ${a.state} ${a.zip}`;
   $("mDeal").textContent = m.best_deal ? "The best deal among your stores" : "Catalog price";
+  $("mFp").textContent = m.fingerprint || "mandate:…";
 }
 
 function steps(list) {

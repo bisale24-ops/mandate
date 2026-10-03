@@ -114,3 +114,12 @@ def test_best_deal_refuses_the_dearer_store_when_the_person_asked_for_the_better
 def test_budget_units_are_unambiguous():
     assert Mandate.of("218.00", {"x"}, HOME, []).budget == 21800      # a string is dollars
     assert Mandate.of(21800, {"x"}, HOME, []).budget == 21800         # an int is already cents
+
+
+def test_the_fingerprint_is_stable_and_changes_with_any_rule():
+    from mandate.policy import fingerprint
+    a = Mandate.of("250.00", {"peakgear", "trailmart"}, HOME, [Want("TENT-2P", 1)])
+    b = Mandate.of("250.00", {"trailmart", "peakgear"}, HOME, [Want("TENT-2P", 1)])
+    assert fingerprint(a) == fingerprint(b) and fingerprint(a).startswith("mandate:")
+    assert fingerprint(a) != fingerprint(Mandate.of("250.01", {"peakgear", "trailmart"}, HOME, [Want("TENT-2P", 1)]))
+    assert fingerprint(a) != fingerprint(Mandate.of("250.00", {"peakgear", "trailmart"}, HOME, [Want("TENT-2P", 2)]))

@@ -148,7 +148,7 @@ def run_mandate(task, world, pp, mode):
         if pp and held > 0:
             # PayPal stores the order; the mandate checks what PayPal holds, not what the agent said
             auth = pp.authorize(held, reference=task["id"][:120], description=task["request"],
-                                proposal=prop, names=names)
+                                proposal=prop, names=names, custom_id=policy.fingerprint(m))
             checked, held = proposal_from_order(pp.order(auth["order_id"]), prop.merchant)
         v = policy.check(m, checked, world["catalog"], held=held)
         if auth:

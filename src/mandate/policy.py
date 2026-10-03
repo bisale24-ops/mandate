@@ -71,6 +71,17 @@ class Mandate:
                    tuple(wants), currency, allow_substitutes, best_deal, cents(best_deal_slack))
 
 
+def fingerprint(mandate: "Mandate") -> str:
+    """A short, stable hash of the mandate's rules. Stored on every PayPal order as custom_id, so any order in the
+    merchant's PayPal account says which mandate allowed (or refused) it."""
+    import hashlib
+    import json
+    rules = {"budget": mandate.budget, "merchants": sorted(mandate.merchants), "ship_to": list(mandate.ship_to),
+             "wants": [[w.sku, w.quantity] for w in mandate.wants], "currency": mandate.currency,
+             "substitutes": mandate.allow_substitutes, "best_deal": mandate.best_deal, "slack": mandate.best_deal_slack}
+    return "mandate:" + hashlib.sha256(json.dumps(rules, sort_keys=True).encode()).hexdigest()[:16]
+
+
 @dataclasses.dataclass(frozen=True)
 class Line:
     sku: str

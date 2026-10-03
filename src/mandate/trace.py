@@ -67,7 +67,8 @@ def run_task(task_id, world=None, pp=None, mode=None):
         auth = None
         if pp is not None and held > 0:
             auth = pp.authorize(held, reference=f"{task_id}-mandate-{len(attempts)}"[:120],
-                                description=task["request"], proposal=p, names=names)
+                                description=task["request"], proposal=p, names=names,
+                                custom_id=policy.fingerprint(m))
             checked, held = proposal_from_order(pp.order(auth["order_id"]), p.merchant)
         v = policy.check(m, checked, catalog, held=held)
         if auth:
@@ -85,7 +86,7 @@ def run_task(task_id, world=None, pp=None, mode=None):
     return {"task": {k: task[k] for k in ("id", "line", "attack", "where", "request", "budget")},
             "budget_text": dollars(task["budget"]), "best_text": dollars(best),
             "injection": task.get("injection"),
-            "mandate": {"budget": dollars(m.budget), "stores": sorted(m.merchants), "ship_to": dict(m.ship_to),
+            "mandate": {"fingerprint": policy.fingerprint(m), "budget": dollars(m.budget), "stores": sorted(m.merchants), "ship_to": dict(m.ship_to),
                         "wants": [{"sku": w.sku, "name": names.get(w.sku, w.sku), "quantity": w.quantity}
                                   for w in m.wants], "best_deal": m.best_deal},
             "without": plain, "with": guarded}

@@ -89,7 +89,7 @@ class PayPal:
         return self._send(method, path, body if body is not None else ({} if method == "POST" else None), headers)
 
     def authorize(self, total_cents, card=None, reference="mandate", currency="USD", description=None, request_id=None,
-                  proposal=None, names=None):
+                  proposal=None, names=None, custom_id=None):
         """Create an order with intent AUTHORIZE and a card source: the money is held, nothing is taken.
         With a proposal, PayPal stores the line items, shipping amount and ship-to address on the order,
         so the mandate can read the order back from PayPal instead of trusting the agent.
@@ -99,6 +99,8 @@ class PayPal:
             unit["description"] = description[:127]
         if proposal is not None:
             unit.update(order_unit(proposal, currency, names or {}))
+        if custom_id:
+            unit["custom_id"] = custom_id[:127]
         order = self._api("POST", "/v2/checkout/orders", {
             "intent": "AUTHORIZE", "purchase_units": [unit],
             "payment_source": {"card": card or TEST_CARD}}, request_id)
