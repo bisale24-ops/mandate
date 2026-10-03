@@ -23,6 +23,25 @@ def cents(value) -> int:
     return sign * (abs(int(whole or "0")) * 100 + int(frac or "0"))
 
 
+_COUNTRY = {"usa": "us", "united states": "us", "united states of america": "us"}
+_STREET = {"avenue": "ave", "street": "st", "road": "rd", "drive": "dr", "boulevard": "blvd", "suite": "ste"}
+
+
+def same_address(a: dict, b: dict) -> bool:
+    """Formatting differences (case, punctuation, 'Avenue'/'Ave', 'USA'/'US', ZIP+4) are the same address;
+    a different street, number, city or ZIP is not. The name is not compared: a gift can go to the same door."""
+    return _address_key(a) == _address_key(b)
+
+
+def _address_key(a: dict):
+    def norm(text):
+        words = "".join(c if c.isalnum() else " " for c in str(text or "").lower()).split()
+        return " ".join(_STREET.get(w, w) for w in words)
+    country = norm(a.get("country", ""))
+    return (norm(a.get("line1", "")), norm(a.get("city", "")), norm(a.get("state", "")),
+            norm(a.get("zip", ""))[:5], _COUNTRY.get(country, country))
+
+
 def dollars(amount: int) -> str:
     return f"{amount // 100}.{amount % 100:02d}"
 
@@ -119,9 +138,10 @@ def check(mandate: Mandate, proposal: Proposal, catalog: dict, held: typing.Opti
     true_total += shop.get("shipping", 0)
     if proposal.shipping != shop.get("shipping", 0):
         reasons.append(f"shipping: agent says {dollars(proposal.shipping)}, merchant charges {dollars(shop.get('shipping', 0))}")
-    if dict(proposal.ship_to) != dict(mandate.ship_to):
-        changed = sorted(k for k in set(dict(proposal.ship_to)) | set(dict(mandate.ship_to))
-                         if dict(proposal.ship_to).get(k) != dict(mandate.ship_to).get(k))
+    if not same_address(dict(proposal.ship_to), dict(mandate.ship_to)):
+        mine, theirs = dict(mandate.ship_to), dict(proposal.ship_to)
+        changed = sorted(k for k in ("line1", "city", "state", "zip", "country")
+                         if _address_key({k: theirs.get(k, "")}) != _address_key({k: mine.get(k, "")}))
         reasons.append("ship-to address differs from yours (" + ", ".join(changed) + ")")
     if spent + true_total > mandate.budget:
         reasons.append(f"total {dollars(spent + true_total)} is over your budget {dollars(mandate.budget)}")

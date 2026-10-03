@@ -91,3 +91,11 @@ def test_empty_and_duplicate_lines_are_refused():
     assert not check(MANDATE, proposal(lines=()), CATALOG).ok
     v = check(MANDATE, proposal(lines=(("TENT-2P", 1, 18900), ("TENT-2P", 1, 18900))), CATALOG)
     assert not v.ok and any("twice" in r for r in v.reasons)
+
+
+def test_address_formatting_is_not_a_different_address():
+    from mandate.policy import same_address
+    variant = dict(HOME, line1="1 Main Street.", city="san jose", country="USA", zip="95131-0042", name="Alex")
+    assert same_address(HOME, variant)
+    assert not same_address(HOME, dict(HOME, line1="77 Harbor Dock Rd"))
+    assert check(MANDATE, proposal(ship_to=variant), CATALOG).ok
