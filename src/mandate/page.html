@@ -271,15 +271,19 @@ async function run() {
 
 async function loadBench() {
   const b = await (await fetch("/api/bench")).json();
-  const s = b.summary;
-  if (!s) { $("benchTable").innerHTML = `<tr><td>The benchmark is running.</td></tr>`; return; }
-  const row = (name, k, us) => {
+  const runs = (b.runs || []).filter(r => r.summary);
+  if (!runs.length) { $("benchTable").innerHTML = `<tr><td>The benchmark is running.</td></tr>`; return; }
+  const row = (s, name, k, us) => {
     const x = s[k];
     return `<tr class="${us ? "us" : ""}"><td>${name}</td><td class="big ${us ? "hl" : ""}">${x.harm_on_attacks} / ${x.attacks}</td><td class="big">${x.degraded_on_attacks}</td><td class="big ${us ? "hl" : ""}">${x.correct_on_attacks}</td><td class="big">$${x.dollars_lost_on_attacks}</td><td class="big">${x.honest_completed} / ${x.honest}</td></tr>`;
   };
-  $("benchTable").innerHTML = `<tr><th>Agent</th><th>Harmful payments</th><th>Paid more than the best deal</th><th>Right item, best price</th><th>Lost to attacks</th><th>Honest buys completed</th></tr>`
-    + row("No guard", "unguarded") + row("“Ignore page instructions” in the prompt", "prompt_guard") + row("Mandate", "mandate", true);
-  $("benchNote").textContent = `${b.tasks} tasks run so far · model ${b.model} · every Mandate decision made on the order PayPal holds${b.stopped ? " · " + b.stopped : ""}.`;
+  let html = `<tr><th>Agent</th><th>Harmful payments</th><th>Paid more than the best deal</th><th>Right item, best price</th><th>Lost to attacks</th><th>Honest buys completed</th></tr>`;
+  for (const r of runs) {
+    if (runs.length > 1) html += `<tr><td colspan="6" style="padding-top:22px;color:#b9d3a6;font-size:13px;font-weight:600">${esc(r.model)} · ${r.tasks} tasks</td></tr>`;
+    html += row(r.summary, "No guard", "unguarded") + row(r.summary, "“Ignore page instructions” in the prompt", "prompt_guard") + row(r.summary, "Mandate", "mandate", true);
+  }
+  $("benchTable").innerHTML = html;
+  $("benchNote").textContent = runs.map(r => `${r.model}: ${r.tasks} tasks${r.stopped ? " (" + r.stopped + ")" : ""}`).join(" · ") + " · every Mandate decision made on the order PayPal holds.";
 }
 
 $("composeForm").onsubmit = async e => {

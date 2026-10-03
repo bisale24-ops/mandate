@@ -39,12 +39,16 @@ def scenarios():
 
 
 def bench():
-    path = ROOT / "docs" / "bench.json"
-    if not path.exists():
-        return {"summary": None}
-    data = json.loads(path.read_text())
-    return {"model": data.get("model"), "summary": data.get("summary"), "stopped": data.get("stopped"),
-            "tasks": len(data.get("rows", []))}
+    """Every recorded benchmark: docs/bench.json (the main model) first, then docs/bench-<model>.json."""
+    runs = []
+    for path in sorted((ROOT / "docs").glob("bench*.json"), key=lambda p: (p.name != "bench.json", p.name)):
+        if path.name == "bench-tent.json":
+            continue
+        data = json.loads(path.read_text())
+        runs.append({"model": data.get("model"), "summary": data.get("summary"), "stopped": data.get("stopped"),
+                     "tasks": len(data.get("rows", []))})
+    first = runs[0] if runs else {"summary": None}
+    return dict(first, runs=runs)
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
