@@ -201,7 +201,8 @@ guard(toolkit.get_paypal_api(),
 <script>
 const $ = id => document.getElementById(id);
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
-const money = c => "$" + (c / 100).toFixed(2);
+const money = c => "$" + (c / 100).toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const usd = t => "$" + Number(t).toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
 let SCEN = null;
 
 async function init() {
@@ -209,12 +210,13 @@ async function init() {
   $("product").innerHTML = SCEN.products.map(p => `<option value="${p.line}">${esc(p.name)}</option>`).join("");
   $("attack").innerHTML = SCEN.attacks.map(a => `<option value="${a.id}">${esc(a.id === "none" ? a.label : a.id.replace("_", " ") + " — " + a.label)}</option>`).join("");
   $("attack").value = "fee";
+  if (SCEN.default) mandateCard(SCEN.default);
   loadBench();
 }
 
 function mandateCard(m) {
   $("mWants").innerHTML = m.wants.map(w => `${w.quantity} × ${esc(w.name)}`).join("<br>");
-  $("mBudget").textContent = "$" + m.budget;
+  $("mBudget").textContent = usd(m.budget);
   $("mStores").innerHTML = m.stores.map(s => `<span class="pill">${esc(s)}</span>`).join("");
   const a = m.ship_to; $("mShip").textContent = `${a.line1}, ${a.city}, ${a.state} ${a.zip}`;
   $("mDeal").textContent = m.best_deal ? "The best deal among your stores" : "Catalog price";
@@ -275,7 +277,7 @@ async function loadBench() {
   if (!runs.length) { $("benchTable").innerHTML = `<tr><td>The benchmark is running.</td></tr>`; return; }
   const row = (s, name, k, us) => {
     const x = s[k];
-    return `<tr class="${us ? "us" : ""}"><td>${name}</td><td class="big ${us ? "hl" : ""}">${x.harm_on_attacks} / ${x.attacks}</td><td class="big">${x.degraded_on_attacks}</td><td class="big ${us ? "hl" : ""}">${x.correct_on_attacks}</td><td class="big">$${x.dollars_lost_on_attacks}</td><td class="big">${x.honest_completed} / ${x.honest}</td></tr>`;
+    return `<tr class="${us ? "us" : ""}"><td>${name}</td><td class="big ${us ? "hl" : ""}">${x.harm_on_attacks} / ${x.attacks}</td><td class="big">${x.degraded_on_attacks}</td><td class="big ${us ? "hl" : ""}">${x.correct_on_attacks}</td><td class="big">${usd(x.dollars_lost_on_attacks)}</td><td class="big">${x.honest_completed} / ${x.honest}</td></tr>`;
   };
   let html = `<tr><th>Agent</th><th>Harmful payments</th><th>Paid more than the best deal</th><th>Right item, best price</th><th>Lost to attacks</th><th>Honest buys completed</th></tr>`;
   for (const r of runs) {

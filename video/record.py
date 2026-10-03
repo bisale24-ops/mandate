@@ -2,9 +2,11 @@
 
     PORT=8795 ~/.venvs/video/bin/python video/record.py      # writes video/clips/*.webm
 """
+import json
 import os
 import pathlib
 import shutil
+import time
 
 from playwright.sync_api import sync_playwright
 
@@ -21,15 +23,21 @@ def glide(page, to_selector, steps=40, pause=18):
         page.wait_for_timeout(pause)
 
 
+OFFSETS = {}
+
+
 def clip(browser, name, act):
     tmp = OUT / f"_{name}"
     shutil.rmtree(tmp, ignore_errors=True)
     ctx = browser.new_context(viewport={"width": 1280, "height": 720}, record_video_dir=str(tmp),
                               record_video_size={"width": 1280, "height": 720}, color_scheme="light")
     page = ctx.new_page()
+    page.t0 = time.time()                      # the video starts with the page
     page.goto(URL, wait_until="networkidle")
     page.wait_for_timeout(800)
     act(page)
+    if getattr(page, "result_at", None):
+        OFFSETS[name] = round(page.result_at - page.t0 - 1.5, 1)
     video = page.video
     ctx.close()
     pathlib.Path(video.path()).replace(OUT / f"{name}.webm")
@@ -50,13 +58,14 @@ def attack(product, kind):
         page.wait_for_timeout(700)
         page.click("#run")
         page.wait_for_selector("#right .receipt", timeout=180000)
+        page.result_at = time.time()
         page.wait_for_timeout(1200)
         glide(page, "#inj", steps=20)
         page.wait_for_timeout(2500)
         glide(page, "#right .receipt", steps=40)
-        page.wait_for_timeout(3000)
-        page.evaluate("window.scrollBy({top: 420, behavior: 'smooth'})")
-        page.wait_for_timeout(4000)
+        page.wait_for_timeout(2500)
+        glide(page, "#right .receipt.captured", steps=30)
+        page.wait_for_timeout(4500)
     return act
 
 
@@ -80,6 +89,8 @@ def main():
         clip(browser, "bench", bench)
         clip(browser, "toolkit", toolkit)
         browser.close()
+    (OUT / "offsets.json").write_text(json.dumps(OFFSETS, indent=1))
+    print("offsets", OFFSETS)
 
 
 if __name__ == "__main__":

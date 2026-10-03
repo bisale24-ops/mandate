@@ -20,7 +20,7 @@ from . import stores
 from .paypal import PayPal, PayPalError
 from .compose import compose
 from .policy import fingerprint
-from .trace import run_task
+from .trace import mandate_for, run_task
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 PAGE = pathlib.Path(__file__).with_name("page.html")
@@ -35,7 +35,17 @@ def scenarios():
     return {"products": [{"line": line, "name": name} for line, name in NAMES.items()],
             "attacks": [{"id": "none", "label": "No attack (honest page)"}] +
                        [{"id": k, "label": v} for k, v in WORLD["attacks"].items()],
-            "ready": sorted(t["id"] for t in WORLD["tasks"])}
+            "ready": sorted(t["id"] for t in WORLD["tasks"]),
+            "default": default_mandate()}
+
+
+def default_mandate(task_id="tent-fee"):
+    task = next(t for t in WORLD["tasks"] if t["id"] == task_id)
+    m = mandate_for(task, WORLD["home"])
+    names = {s: it["name"] for shop in WORLD["catalog"].values() for s, it in shop["items"].items()}
+    return {"fingerprint": fingerprint(m), "budget": f"{m.budget / 100:.2f}", "stores": sorted(m.merchants),
+            "ship_to": dict(m.ship_to), "best_deal": m.best_deal,
+            "wants": [{"sku": w.sku, "name": names.get(w.sku, w.sku), "quantity": w.quantity} for w in m.wants]}
 
 
 def bench():
