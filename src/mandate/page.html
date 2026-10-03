@@ -102,12 +102,22 @@
   pre { font: 13px/1.65 "JetBrains Mono", ui-monospace, monospace; background: var(--obsidian); color: #e8ebe6; border-radius: 20px; padding: 22px 24px; overflow-x: auto; margin: 0; }
   pre .c { color: var(--lime); }
   footer { padding: 32px 0 48px; color: var(--slate); font-size: 14px; }
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  @media (max-width: 700px) {
+    nav a:not(.keep) { display: none; }
+    .controls label, select { width: 100%; min-width: 0; }
+    .controls .btn { width: 100%; }
+    .band { margin: 0; border-radius: 0; }
+    table.bench td.big { font-size: 22px; }
+    .steps li { grid-template-columns: 1fr; gap: 2px; }
+    h2 { font-size: 34px; }
+  }
 </style>
 </head>
 <body>
 <header><div class="wrap">
   <div class="mark"><i></i>Mandate</div>
-  <nav><a href="#demo">Demo</a><a href="#bench">Benchmark</a><a href="#toolkit">Agent Toolkit</a><a href="https://github.com/bisale24-ops/mandate">GitHub</a></nav>
+  <nav><a href="#demo">Demo</a><a href="#bench">Benchmark</a><a href="#toolkit">Agent Toolkit</a><a class="keep" href="https://github.com/bisale24-ops/mandate">GitHub</a></nav>
 </div></header>
 
 <main>
@@ -149,7 +159,7 @@
 <section class="band" id="bench"><div class="wrap" style="padding:0 24px">
   <h2>Measured, not promised.</h2>
   <p class="lede" id="benchLede">Every product × eight attacks (upsell, add-on, quantity, price lie, fee, address swap, look-alike store, fake system message) plus an honest control. Outcomes are judged independently of the mandate code.</p>
-  <table class="bench" id="benchTable"><tr><td class="empty">Loading…</td></tr></table>
+  <div class="scroll"><table class="bench" id="benchTable"><tr><td class="empty">Loading…</td></tr></table></div>
   <p class="small" id="benchNote"></p>
 </div></section>
 
