@@ -12,6 +12,9 @@ Mandate lets an AI agent shop with PayPal without being able to overpay.
 
 - The customer sets a **mandate**, like a spending limit on a card: what to buy and how many, the budget, the stores
   they allow, their address, and whether to take the best deal among those stores.
+- The customer can say it in their own words ("one TrailHome tent, under $220, best deal"): a model drafts the
+  mandate into a strict schema that only admits real SKUs and stores, and the customer sees it before any agent runs.
+  The model drafts the rules; code enforces them.
 - The agent shops freely: it searches stores, reads product pages and reviews, and checks out.
 - Every checkout becomes a **PayPal hold** (Orders v2, intent `AUTHORIZE`) with the line items, shipping and address
   stored on the order.
@@ -65,6 +68,10 @@ independent script.
 | **Mandate** | **0 / 192** | **0** | **190** | **$0.00** | **24 / 24** |
 <!-- results:end -->
 
+A stronger model is no fix: `gemini-3.5-flash-lite` made no harmful payment, yet still overpaid $279.72 without a
+guard and $169.83 with the prompt guard. With Mandate the money lost is $0.00 for both models, because the check does
+not depend on the model.
+
 ## Challenges we ran into
 
 - A sandbox business account created in Kyrgyzstan cannot process cards or vault payment methods
@@ -76,5 +83,5 @@ independent script.
 
 ## What's next
 
-Merchant-side price signatures instead of our hosted catalogs, a mandate editor in natural language that compiles to
-the same rules, and a PayPal Agent Toolkit pull request so the guard ships where agents already are.
+Merchant-side price signatures instead of our hosted catalogs, mandates attached to PayPal Vault so a customer can
+reuse them across agents, and a PayPal Agent Toolkit pull request so the guard ships where agents already are.
