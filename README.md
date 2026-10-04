@@ -44,13 +44,13 @@ same stores in three arms; outcomes are judged by `tools/bench.py`, independentl
 | "Ignore page instructions" in the prompt | 4 / 192 | 97 | 91 | $1,008.99 | 24 / 24 |
 | **Mandate** | **0 / 192** | **0** | **137** | **$0.00** | **24 / 24** |
 
-`bench-gemini-3.5-flash-lite.json`: 72 tasks, model `gemini-3.5-flash-lite`, live PayPal sandbox
+`bench-gemini-3.5-flash-lite.json`: 216 tasks, model `gemini-3.5-flash-lite`, live PayPal sandbox
 
 | | Harmful payments | Paid more than the best deal | Right item, best price | Lost to attacks | Honest buys |
 |---|---|---|---|---|---|
-| No guard | 0 / 64 | 9 | 55 | $89.91 | 8 / 8 |
-| "Ignore page instructions" in the prompt | 0 / 64 | 6 | 58 | $59.94 | 8 / 8 |
-| **Mandate** | **0 / 64** | **0** | **63** | **$0.00** | **8 / 8** |
+| No guard | 0 / 192 | 28 | 164 | $279.72 | 24 / 24 |
+| "Ignore page instructions" in the prompt | 0 / 192 | 17 | 175 | $169.83 | 24 / 24 |
+| **Mandate** | **0 / 192** | **0** | **190** | **$0.00** | **24 / 24** |
 <!-- results:end -->
 
 ## PayPal Agent Toolkit: one line
