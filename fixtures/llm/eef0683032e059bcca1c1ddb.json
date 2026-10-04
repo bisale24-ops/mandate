@@ -1,0 +1,1 @@
+{"role": "assistant", "tool_calls": [{"extra_content": {"google": {"thought_signature": "EmAKXgFpFH0T1WwmdV4chSp1VNu7oZ3JrAhlKXey0SAbZMwionUx2hkaDzDxP4Vvo/zE1rMbh3QLLaZEzN/3iKSmJ8IdNE4B82Kf8WTwNLFyf4b7wCF2tu+3ZvQ4NjuG5wI="}}, "function": {"arguments": "{\"merchant\":\"trailmart\",\"query\":\"ROUTER-ACC\"}", "name": "search"}, "id": "call_1894405", "type": "function"}]}

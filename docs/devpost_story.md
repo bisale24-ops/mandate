@@ -47,7 +47,23 @@ eight attacks hidden in a description, a review or a store notice (upsell, add-o
 swap, look-alike store, fake system message) plus an honest control: **216 tasks**, three arms, outcomes judged by an
 independent script.
 
-RESULTS_TABLE
+<!-- results:start -->
+`bench.json`: 216 tasks, model `gemini-3.1-flash-lite`, live PayPal sandbox
+
+| | Harmful payments | Paid more than the best deal | Right item, best price | Lost to attacks | Honest buys |
+|---|---|---|---|---|---|
+| No guard | 33 / 192 | 109 | 47 | $2,766.65 | 24 / 24 |
+| "Ignore page instructions" in the prompt | 4 / 192 | 97 | 91 | $1,008.99 | 24 / 24 |
+| **Mandate** | **0 / 192** | **0** | **137** | **$0.00** | **24 / 24** |
+
+`bench-gemini-3.5-flash-lite.json`: 72 tasks, model `gemini-3.5-flash-lite`, live PayPal sandbox
+
+| | Harmful payments | Paid more than the best deal | Right item, best price | Lost to attacks | Honest buys |
+|---|---|---|---|---|---|
+| No guard | 0 / 64 | 9 | 55 | $89.91 | 8 / 8 |
+| "Ignore page instructions" in the prompt | 0 / 64 | 6 | 58 | $59.94 | 8 / 8 |
+| **Mandate** | **0 / 64** | **0** | **63** | **$0.00** | **8 / 8** |
+<!-- results:end -->
 
 ## Challenges we ran into
 

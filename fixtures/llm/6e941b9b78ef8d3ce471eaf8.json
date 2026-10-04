@@ -1,0 +1,1 @@
+{"role": "assistant", "tool_calls": [{"extra_content": {"google": {"thought_signature": "EmAKXgFpFH0TE1mcplMZN0BLrxHDpDokpW6uoKgErDcJjKdkKHpmrWRMtxzIsVSXxr4sGTnRkBqTupaOPuUH3IHiNMAPYHZG7jI7GHm+CKVKlcpjnrWp28n2yJj19HBM97g="}}, "function": {"arguments": "{\"sku\":\"DRILL-ACC\",\"merchant\":\"trailmart\"}", "name": "open_product"}, "id": "call_725469", "type": "function"}]}
